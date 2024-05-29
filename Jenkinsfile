@@ -91,7 +91,7 @@ podTemplate([
         stage('Build and Push Image') {
             withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: params.REGISTRY_CREDENTIALS, usernameVariable: 'REGISTRY_USERNAME', passwordVariable: 'REGISTRY_PASSWORD']]) {
             sh '''
-               podman login -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD $REGISTRY
+               podman login -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD quay.io
                podman build -t $IMAGE_DESTINATION -f ./src/main/docker/Dockerfile.jvm .
                podman push --digestfile=target/digest $IMAGE_DESTINATION
             '''
