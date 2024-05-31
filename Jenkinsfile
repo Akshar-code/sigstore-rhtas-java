@@ -6,7 +6,7 @@ properties([
         string(defaultValue: 'trusted-artifact-signer', description: 'Client ID', name: 'CLIENT_ID'),
         string(defaultValue: 'trusted-artifact-signer', description: 'Keycloak Realm', name: 'KEYCLOAK_REALM'),
         string(defaultValue: '', description: 'Image Destination', name: 'IMAGE_DESTINATION'),
-        string(defaultValue: 'registry-credentials', description: 'Registry Credentials', name: 'REGISTRY_CREDENTIALS')
+        string(defaultValue: 'registry-credentials', description: 'REGISTRY_CREDENTIALS')
     ])
 ])
 
@@ -20,12 +20,6 @@ podTemplate([
             image: "${params.AGENT_IMAGE}",
             alwaysPullImage: false,
             args: '${computer.jnlpmac} ${computer.name}'
-        ),
-        containerTemplate(
-            name: 'syft',
-            image: 'quay.io/redhat-appstudio/syft:v1.2.0',
-            command: 'cat',
-            ttyEnabled: true
         )
     ],
     volumes: [secretVolume(mountPath: '/var/run/sigstore/cosign',
@@ -101,18 +95,6 @@ podTemplate([
             '''
             }
         }
-        // Step to generate SBOM using Syft
-        stage('Generate SBOM') {
-            container('syft') {
-                sh '''
-                #!/bin/bash
-                apt-get update && apt-get install -y docker.io
-                docker pull quay.io/redhat-appstudio/syft:v1.2.0
-                docker run --rm -v $(pwd):/workspace -w /workspace quay.io/redhat-appstudio/syft:v1.2.0 syft $DIGEST_DESTINATION -o spdx-json=sbom.json
-                '''
-            archiveArtifacts artifacts: 'sbom.json', allowEmptyArchive: true
-            }
-        }
 
         stage('Sign Artifacts') {
             unstash 'binaries'
@@ -142,7 +124,13 @@ podTemplate([
             $COSIGN verify  --certificate-identity=ci-builder@redhat.com  quay.io/rh-ee-akottuva/hangman:latest
             '''
         }
-
+        // Step to generate SBOM using Syft
+        stage('Generate SBOM') {
+            sh '''
+            docker run --rm -v $(pwd):/workspace -w /workspace anchore/syft $DIGEST_DESTINATION -o spdx-json=sbom.json
+            '''
+            archiveArtifacts artifacts: 'sbom.json', allowEmptyArchive: true
+        }
 
     }
 }
