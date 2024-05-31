@@ -1,3 +1,4 @@
+
 properties([
     parameters([
         string(defaultValue: 'quay.io/ablock/nonroot-jenkins-agent-maven:latest', description: 'Agent Image', name: 'AGENT_IMAGE'),
@@ -6,7 +7,7 @@ properties([
         string(defaultValue: 'trusted-artifact-signer', description: 'Client ID', name: 'CLIENT_ID'),
         string(defaultValue: 'trusted-artifact-signer', description: 'Keycloak Realm', name: 'KEYCLOAK_REALM'),
         string(defaultValue: '', description: 'Image Destination', name: 'IMAGE_DESTINATION'),
-        string(defaultValue: 'registry-credentials', description: 'REGISTRY_CREDENTIALS')
+        string(defaultValue: 'registry-credentials', description: 'Registry Credentials', name: 'REGISTRY_CREDENTIALS')
     ])
 ])
 
@@ -28,6 +29,7 @@ podTemplate([
 ]) {
     node('non-root-jenkins-agent-maven') {
     
+
        stage('Setup Environment') {
 
          env.COSIGN_FULCIO_URL="https://fulcio-server-trusted-artifact-signer.${params.APPS_DOMAIN}"
@@ -126,11 +128,14 @@ podTemplate([
         }
         // Step to generate SBOM using Syft
         stage('Generate SBOM') {
-            sh '''
-            docker run --rm -v $(pwd):/workspace -w /workspace anchore/syft $DIGEST_DESTINATION -o spdx-json=sbom.json
-            '''
+            container('syft') {
+                sh '''
+                podman pull quay.io/redhat-appstudio/syft:v1.2.0
+                podman run --rm -v $(pwd):/workspace -w /workspace quay.io/redhat-appstudio/syft:v1.2.0 syft $DIGEST_DESTINATION -o spdx-json=sbom.json
+                '''
             archiveArtifacts artifacts: 'sbom.json', allowEmptyArchive: true
-        }
+    }
+}
 
     }
 }
