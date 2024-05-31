@@ -34,7 +34,6 @@ podTemplate([
 ]) {
     node('non-root-jenkins-agent-maven') {
     
-
        stage('Setup Environment') {
 
          env.COSIGN_FULCIO_URL="https://fulcio-server-trusted-artifact-signer.${params.APPS_DOMAIN}"
@@ -135,6 +134,8 @@ podTemplate([
         stage('Generate SBOM') {
             container('syft') {
                 sh '''
+                #!/bin/bash
+                apt-get update && apt-get install -y docker.io
                 docker pull quay.io/redhat-appstudio/syft:v1.2.0
                 docker run --rm -v $(pwd):/workspace -w /workspace quay.io/redhat-appstudio/syft:v1.2.0 syft $DIGEST_DESTINATION -o spdx-json=sbom.json
                 '''
