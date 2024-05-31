@@ -63,6 +63,9 @@ podTemplate([
                 echo "Downloading syft"
                 curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b .
                 chmod +x syft
+                
+                echo "Verifying Syft installation"
+                ./syft -v
             '''
         }
 
