@@ -135,8 +135,8 @@ podTemplate([
         stage('Generate SBOM') {
             container('syft') {
                 sh '''
-                podman pull quay.io/redhat-appstudio/syft:v1.2.0
-                podman run --rm -v $(pwd):/workspace -w /workspace quay.io/redhat-appstudio/syft:v1.2.0 syft $DIGEST_DESTINATION -o spdx-json=sbom.json
+                docker pull quay.io/redhat-appstudio/syft:v1.2.0
+                docker run --rm -v $(pwd):/workspace -w /workspace quay.io/redhat-appstudio/syft:v1.2.0 syft $DIGEST_DESTINATION -o spdx-json=sbom.json
                 '''
             archiveArtifacts artifacts: 'sbom.json', allowEmptyArchive: true
             }
