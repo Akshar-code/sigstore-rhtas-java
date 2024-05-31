@@ -64,7 +64,7 @@ podTemplate([
             chmod +x syft
 
             echo "Verifying installations"
-            ./syft -v
+            ./syft --v
             echo " "
         '''
 
