@@ -126,6 +126,16 @@ podTemplate([
             $COSIGN verify  --certificate-identity=ci-builder@redhat.com  quay.io/rh-ee-akottuva/hangman:latest
             '''
         }
+        // Step to generate SBOM using Syft
+        stage('Generate SBOM') {
+            container('syft') {
+                sh '''
+                podman pull quay.io/redhat-appstudio/syft:v0.105.1@sha256:1910b829997650c696881e5fc2fc654ddf3184c27edb1b2024e9cb2ba51ac431
+                podman run --rm -v $(pwd):/workspace -w /workspace quay.io/redhat-appstudio/syft:v0.105.1@sha256:1910b829997650c696881e5fc2fc654ddf3184c27edb1b2024e9cb2ba51ac431 syft $SBOM_DESTINATION -o spdx-json=sbom.json
+                '''
+            archiveArtifacts artifacts: 'sbom.json', allowEmptyArchive: true
+    }
+}
 
     }
 }
