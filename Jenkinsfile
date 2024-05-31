@@ -66,6 +66,8 @@ podTemplate([
 
                 echo "Listing directory contents"
                 ls -l
+                echo "Verifying installations"
+                ./syft -v
             '''
         }
 
@@ -101,12 +103,12 @@ podTemplate([
 
                echo "Image Destination: $IMAGE_DESTINATION"
                
+               # Verify Syft installation again
+               ./bin/syft -v
+
                echo "Current Directory: $(pwd)"
                echo "Listing directory contents"
                ls -l
-
-               # Verify Syft installation again
-               ./bin/syft -v
 
                # Generate SBOM
                ./bin/syft $IMAGE_DESTINATION -o json > sbom.json
