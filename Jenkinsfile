@@ -1,4 +1,3 @@
-
 properties([
     parameters([
         string(defaultValue: 'quay.io/ablock/nonroot-jenkins-agent-maven:latest', description: 'Agent Image', name: 'AGENT_IMAGE'),
@@ -29,9 +28,7 @@ podTemplate([
 ]) {
     node('non-root-jenkins-agent-maven') {
     
-
        stage('Setup Environment') {
-
          env.COSIGN_FULCIO_URL="https://fulcio-server-trusted-artifact-signer.${params.APPS_DOMAIN}"
          env.COSIGN_REKOR_URL="https://rekor-server-trusted-artifact-signer.${params.APPS_DOMAIN}"
          env.COSIGN_MIRROR="https://tuf-trusted-artifact-signer.${params.APPS_DOMAIN}"
@@ -46,8 +43,8 @@ podTemplate([
          env.SIGSTORE_REKOR_URL="https://rekor-server-trusted-artifact-signer.${params.APPS_DOMAIN}"
          env.REKOR_REKOR_SERVER="https://rekor-server-trusted-artifact-signer.${params.APPS_DOMAIN}"
          env.COSIGN="bin/cosign"
+         env.SYFT="bin/syft"
          env.REGISTRY=sh(script: "echo ${params.IMAGE_DESTINATION} | cut -d '/' -f1", returnStdout: true).trim()
-
 
         if(params.APPS_DOMAIN == "") {
             currentBuild.result = 'FAILURE'
@@ -62,6 +59,9 @@ podTemplate([
                 gzip -f -d cosign.gz
                 rm -f cosign.gz
                 chmod +x cosign
+
+                echo "Downloading syft"
+                curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
             '''
         }
 
@@ -94,6 +94,12 @@ podTemplate([
                podman login -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD quay.io
                podman build -t $IMAGE_DESTINATION -f ./src/main/docker/Dockerfile.jvm .
                podman push --digestfile=target/digest $IMAGE_DESTINATION
+               
+               # Generate SBOM
+               syft $IMAGE_DESTINATION -o json > sbom.json
+
+               # Push SBOM to Quay
+               podman push sbom.json $IMAGE_DESTINATION
             '''
             }
         }
@@ -116,7 +122,7 @@ podTemplate([
 
                $COSIGN sign --identity-token=/var/run/sigstore/cosign/id-token $DIGEST_DESTINATION
 
-               $COSIGN attest --identity-token=/var/run/sigstore/cosign/id-token --predicate=./target/classes/META-INF/maven/com.redhat/sigstore-rhtas-java/license.spdx.json -y --type=spdxjson $DIGEST_DESTINATION
+               $COSIGN attest --identity-token=/var/run/sigstore/cosign/id-token --predicate=sbom.json -y --type=spdxjson $DIGEST_DESTINATION
             '''
             }
         }
