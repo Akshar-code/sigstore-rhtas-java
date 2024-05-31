@@ -63,12 +63,9 @@ podTemplate([
             curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b .
             chmod +x syft
 
-            echo "Verifying installations"
-            ./syft --v
-            echo " "
         '''
 
-        stash name: 'binaries', includes: './*'
+        stash name: 'binaries', includes: 'cosign, syft'
 
        }
 
@@ -99,7 +96,7 @@ podTemplate([
                ls -l
 
                # Generate SBOM
-               ./syft $IMAGE_DESTINATION -o json > sbom.json
+               ./syft registry:$IMAGE_DESTINATION -o json > sbom.json
 
                # Push SBOM to Quay
                podman push sbom.json $IMAGE_DESTINATION
