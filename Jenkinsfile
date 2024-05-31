@@ -63,6 +63,9 @@ podTemplate([
                 echo "Downloading syft"
                 curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b .
                 chmod +x syft
+
+                echo "Listing directory contents"
+                ls -l
             '''
         }
 
@@ -98,6 +101,10 @@ podTemplate([
 
                echo "Image Destination: $IMAGE_DESTINATION"
                
+               echo "Current Directory: $(pwd)"
+               echo "Listing directory contents"
+               ls -l
+
                # Verify Syft installation again
                ./bin/syft -v
 
