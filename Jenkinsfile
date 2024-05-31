@@ -5,7 +5,7 @@ properties([
         string(description: 'OIDC Issuer', name: 'OIDC_ISSUER'),
         string(defaultValue: 'trusted-artifact-signer', description: 'Client ID', name: 'CLIENT_ID'),
         string(defaultValue: 'trusted-artifact-signer', description: 'Keycloak Realm', name: 'KEYCLOAK_REALM'),
-        string(defaultValue: '', description: 'Image Destination', name: 'IMAGE_DESTINATION'),
+        string(defaultValue: 'quay.io/rh-ee-akottuva/hangman:latest', description: 'Image Destination', name: 'IMAGE_DESTINATION'),
         string(defaultValue: 'registry-credentials', description: 'Registry Credentials', name: 'REGISTRY_CREDENTIALS')
     ])
 ])
@@ -63,6 +63,10 @@ podTemplate([
                 echo "Downloading syft"
                 curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b .
                 chmod +x syft
+
+                echo "Verifying installations"
+                ls -l
+                ./syft -v
             '''
         }
 
@@ -95,9 +99,14 @@ podTemplate([
                podman login -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD quay.io
                podman build -t $IMAGE_DESTINATION -f ./src/main/docker/Dockerfile.jvm .
                podman push --digestfile=target/digest $IMAGE_DESTINATION
+
+               echo "Image Destination: $IMAGE_DESTINATION"
                
+               # Verify Syft installation again
+               ./bin/syft -v
+
                # Generate SBOM
-               syft $IMAGE_DESTINATION -o json > sbom.json
+               ./bin/syft $IMAGE_DESTINATION -o json > sbom.json
 
                # Push SBOM to Quay
                podman push sbom.json $IMAGE_DESTINATION
