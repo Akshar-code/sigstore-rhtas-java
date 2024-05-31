@@ -1,4 +1,3 @@
-
 properties([
     parameters([
         string(defaultValue: 'quay.io/ablock/nonroot-jenkins-agent-maven:latest', description: 'Agent Image', name: 'AGENT_IMAGE'),
@@ -21,6 +20,12 @@ podTemplate([
             image: "${params.AGENT_IMAGE}",
             alwaysPullImage: false,
             args: '${computer.jnlpmac} ${computer.name}'
+        ),
+        containerTemplate(
+            name: 'syft',
+            image: 'quay.io/redhat-appstudio/syft:v1.2.0',
+            command: 'cat',
+            ttyEnabled: true
         )
     ],
     volumes: [secretVolume(mountPath: '/var/run/sigstore/cosign',
@@ -134,8 +139,8 @@ podTemplate([
                 podman run --rm -v $(pwd):/workspace -w /workspace quay.io/redhat-appstudio/syft:v1.2.0 syft $DIGEST_DESTINATION -o spdx-json=sbom.json
                 '''
             archiveArtifacts artifacts: 'sbom.json', allowEmptyArchive: true
-    }
-}
+            }
+        }
 
     }
 }
