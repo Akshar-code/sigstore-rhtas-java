@@ -66,8 +66,6 @@ podTemplate([
 
                 echo "Listing directory contents"
                 ls -l
-                echo "Verifying installations"
-                ./syft -v
             '''
         }
 
