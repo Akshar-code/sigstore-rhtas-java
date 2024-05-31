@@ -97,7 +97,7 @@ podTemplate([
                podman push --digestfile=target/digest $IMAGE_DESTINATION
                
                # Generate SBOM
-               ./bin/syft $IMAGE_DESTINATION -o json > sbom.json
+               syft $IMAGE_DESTINATION -o json > sbom.json
 
                # Push SBOM to Quay
                podman push sbom.json $IMAGE_DESTINATION
