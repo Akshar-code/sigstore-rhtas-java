@@ -27,7 +27,7 @@ podTemplate([
     )]
 ]) {
     node('non-root-jenkins-agent-maven') {
-    
+
        stage('Setup Environment') {
          env.COSIGN_FULCIO_URL="https://fulcio-server-trusted-artifact-signer.${params.APPS_DOMAIN}"
          env.COSIGN_REKOR_URL="https://rekor-server-trusted-artifact-signer.${params.APPS_DOMAIN}"
@@ -42,8 +42,8 @@ podTemplate([
          env.SIGSTORE_OIDC_ISSUER="${params.OIDC_ISSUER}"
          env.SIGSTORE_REKOR_URL="https://rekor-server-trusted-artifact-signer.${params.APPS_DOMAIN}"
          env.REKOR_REKOR_SERVER="https://rekor-server-trusted-artifact-signer.${params.APPS_DOMAIN}"
-         env.COSIGN="bin/cosign"
-         env.SYFT="bin/syft"
+         env.COSIGN="./cosign"
+         env.SYFT="./syft"
          env.REGISTRY=sh(script: "echo ${params.IMAGE_DESTINATION} | cut -d '/' -f1", returnStdout: true).trim()
 
         if(params.APPS_DOMAIN == "") {
@@ -51,33 +51,24 @@ podTemplate([
             error('Parameter APPS_DOMAIN is not provided')
         }
 
-        dir("bin") {
-            sh '''
-                #!/bin/bash
-                echo "Downloading cosign"
-                curl -Lks -o cosign.gz https://cli-server-trusted-artifact-signer.$APPS_DOMAIN/clients/linux/cosign-amd64.gz
-                gzip -f -d cosign.gz
-                rm -f cosign.gz
-                chmod +x cosign
-
-                echo "Downloading syft"
-                curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b .
-                chmod +x syft
-
-                echo "Listing directory contents"
-                ls -l
-            '''
-        }
-
-        dir("tuf") {
-            deleteDir()
-        }
-
         sh '''
-          $COSIGN initialize
+            #!/bin/bash
+            echo "Downloading cosign"
+            curl -Lks -o cosign.gz https://cli-server-trusted-artifact-signer.$APPS_DOMAIN/clients/linux/cosign-amd64.gz
+            gzip -f -d cosign.gz
+            rm -f cosign.gz
+            chmod +x cosign
+
+            echo "Downloading syft"
+            curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b .
+            chmod +x syft
+
+            echo "Verifying installations"
+            ./syft -v
+            echo " "
         '''
-        
-        stash name: 'binaries', includes: 'bin/*'
+
+        stash name: 'binaries', includes: './*'
 
        }
 
@@ -89,10 +80,9 @@ podTemplate([
         sh '''
           mvn clean package
         '''
-
        }
 
-        stage('Build and Push Image') {
+       stage('Build and Push Image') {
             withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: params.REGISTRY_CREDENTIALS, usernameVariable: 'REGISTRY_USERNAME', passwordVariable: 'REGISTRY_PASSWORD']]) {
             sh '''
                podman login -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD quay.io
@@ -100,16 +90,16 @@ podTemplate([
                podman push --digestfile=target/digest $IMAGE_DESTINATION
 
                echo "Image Destination: $IMAGE_DESTINATION"
-               
+
                # Verify Syft installation again
-               ./bin/syft -v
+               ./syft -v
 
                echo "Current Directory: $(pwd)"
                echo "Listing directory contents"
                ls -l
 
                # Generate SBOM
-               ./bin/syft $IMAGE_DESTINATION -o json > sbom.json
+               ./syft $IMAGE_DESTINATION -o json > sbom.json
 
                # Push SBOM to Quay
                podman push sbom.json $IMAGE_DESTINATION
@@ -139,6 +129,7 @@ podTemplate([
             '''
             }
         }
+
         // Step to verify Signature
         stage('Verify Signature') {
             sh '''
