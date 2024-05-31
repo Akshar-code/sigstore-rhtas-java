@@ -61,7 +61,8 @@ podTemplate([
                 chmod +x cosign
 
                 echo "Downloading syft"
-                curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+                curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b .
+                chmod +x syft
             '''
         }
 
@@ -96,7 +97,7 @@ podTemplate([
                podman push --digestfile=target/digest $IMAGE_DESTINATION
                
                # Generate SBOM
-               syft $IMAGE_DESTINATION -o json > sbom.json
+               ./bin/syft $IMAGE_DESTINATION -o json > sbom.json
 
                # Push SBOM to Quay
                podman push sbom.json $IMAGE_DESTINATION
