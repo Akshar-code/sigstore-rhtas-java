@@ -123,7 +123,7 @@ podTemplate([
         stage('Verify Signature'){
             //Verify Signature
             sh '''
-            $COSIGN verify  --certificate-identity=ci-builder@redhat.com  quay.io/rh-ee-akottuva/jenkins-sbom:latest
+            $COSIGN verify  --certificate-identity=ci-builder@redhat.com --certificate-oidc-issuer=https://keycloak-keycloak-system.apps.cluster-6tjm8.sandbox968.opentlc.com/auth/admin/master/console/#/realms/trusted-artifact-signer quay.io/rh-ee-akottuva/jenkins-sbom:latest
             '''
         }
 
