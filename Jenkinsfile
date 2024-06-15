@@ -91,7 +91,7 @@ podTemplate([
         stage('Build and Push Image') {
             withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: params.REGISTRY_CREDENTIALS, usernameVariable: 'REGISTRY_USERNAME', passwordVariable: 'REGISTRY_PASSWORD']]) {
             sh '''
-               podman login -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD quay.io
+               podman login -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD $REGISTRY
                podman build -t $IMAGE_DESTINATION -f ./src/main/docker/Dockerfile.jvm .
                podman push --digestfile=target/digest $IMAGE_DESTINATION
             '''
@@ -119,12 +119,6 @@ podTemplate([
                $COSIGN attest --identity-token=/var/run/sigstore/cosign/id-token --predicate=./target/classes/META-INF/maven/com.redhat/sigstore-rhtas-java/license.spdx.json -y --type=spdxjson $DIGEST_DESTINATION
             '''
             }
-        }
-        // Step to verify Signature
-        stage('Verify Signature') {
-            sh '''
-            $COSIGN verify  --certificate-identity=ci-builder@redhat.com  quay.io/rh-ee-akottuva/jenkins-sbom:latest
-            '''
         }
 
     }
