@@ -120,6 +120,10 @@ podTemplate([
             '''
             }
         }
+        stage('Verify Artifacts'){
+            //Verify Signature
+            $COSIGN verify  --certificate-identity=ci-builder@redhat.com  quay.io/rh-ee-akottuva/jenkins-sbom:latest
+        }
 
     }
 }
