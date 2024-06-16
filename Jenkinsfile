@@ -122,7 +122,7 @@ podTemplate([
         }
         stage('Verify Artifacts'){
             sh '''
-            $cosign verify  --certificate-identity=ci-builder@redhat.com  quay.io/vedadashan2/sigstore-rhtas-java:latest
+            $COSIGN verify  --certificate-identity=ci-builder@redhat.com  quay.io/vedadashan2/sigstore-rhtas-java:latest
             '''
         }
 
