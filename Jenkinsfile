@@ -135,7 +135,7 @@ podTemplate([
         }
        stage('Verify Artifacts'){
           sh '''
-          $cosign verify  --certificate-identity=ci-builder@redhat.com  quay.io/rh-ee-akottuva/jenkins-sbom:latest
+          $COSIGN verify  --certificate-identity=ci-builder@redhat.com  quay.io/rh-ee-akottuva/jenkins-sbom:latest
              '''
        }
        
