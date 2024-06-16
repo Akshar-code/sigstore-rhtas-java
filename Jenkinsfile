@@ -88,39 +88,49 @@ podTemplate([
 
        }
 
-        stage('Generate and Push SBOM') {
+
+        stage('Build and Push Image') {
+            withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: params.REGISTRY_CREDENTIALS, usernameVariable: 'REGISTRY_USERNAME', passwordVariable: 'REGISTRY_PASSWORD']]) {
             sh '''
-                #!/bin/bash
-                echo "Installing syft and cosign"
-                
-                # Create a directory for syft and cosign installation
-                INSTALL_DIR="${WORKSPACE}/bin"
-                mkdir -p ${INSTALL_DIR}
-                
-                # Install syft
-                curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b ${INSTALL_DIR}
-                
-                # Install cosign
-                curl -L -o ${INSTALL_DIR}/cosign https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64
-                chmod +x ${INSTALL_DIR}/cosign
-                
-                # Add the bin directory to PATH
-                export PATH=${INSTALL_DIR}:$PATH
-        
-                # Check installation
-                echo "Checking syft installation"
-                syft version
-                
-                echo "Checking cosign installation"
-                cosign version
-                
-                echo "Generating SBOM"
-                syft $IMAGE_DESTINATION -o spdx-json > sbom.spdx.json
-        
-                echo "Pushing SBOM to registry"
-                cosign attach sbom --type spdx-json $IMAGE_DESTINATION sbom.spdx.json
+               podman login -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD $REGISTRY
+               podman build -t $IMAGE_DESTINATION -f ./src/main/docker/Dockerfile.jvm .
+               podman push --digestfile=target/digest $IMAGE_DESTINATION
             '''
+            }
         }
+        stage('Generate and Push SBOM') {
+        sh '''
+            #!/bin/bash
+            echo "Installing syft and cosign"
+            
+            # Create a directory for syft and cosign installation
+            INSTALL_DIR="${WORKSPACE}/bin"
+            mkdir -p ${INSTALL_DIR}
+            
+            # Install syft
+            curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b ${INSTALL_DIR}
+            
+            # Install cosign
+            curl -L -o ${INSTALL_DIR}/cosign https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64
+            chmod +x ${INSTALL_DIR}/cosign
+            
+            # Add the bin directory to PATH
+            export PATH=${INSTALL_DIR}:$PATH
+    
+            # Check installation
+            echo "Checking syft installation"
+            syft version
+            
+            echo "Checking cosign installation"
+            cosign version
+            
+            echo "Generating SBOM"
+            syft $IMAGE_DESTINATION -o spdx-json > sbom.spdx.json
+    
+            echo "Pushing SBOM to registry"
+            cosign attach sbom --type spdx-json $IMAGE_DESTINATION sbom.spdx.json
+        '''
+    }
 
         stage('Sign Artifacts') {
             unstash 'binaries'
@@ -144,12 +154,6 @@ podTemplate([
             '''
             }
         }
-       stage('Verify Artifacts'){
-          sh '''
-          $COSIGN verify  --certificate-identity=ci-builder@redhat.com  quay.io/rh-ee-akottuva/jenkins-sbom:latest
-             '''
-       }
-       
 
     }
 }
