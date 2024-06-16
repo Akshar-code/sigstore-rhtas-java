@@ -98,42 +98,40 @@ podTemplate([
             '''
             }
         }
-    stage('Generate and Push SBOM') {
+stage('Generate and Push SBOM') {
+    withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: params.REGISTRY_CREDENTIALS, usernameVariable: 'REGISTRY_USERNAME', passwordVariable: 'REGISTRY_PASSWORD']]) {
         sh '''
             #!/bin/bash
-            echo "Installing syft and cosign"
+            echo "Installing syft"
             
-            # Create a directory for syft and cosign installation
+            # Create a directory for syft installation
             INSTALL_DIR="${WORKSPACE}/bin"
             mkdir -p ${INSTALL_DIR}
             
             # Install syft
             curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b ${INSTALL_DIR}
             
-            # Install cosign
-            curl -L -o ${INSTALL_DIR}/cosign https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64
-            chmod +x ${INSTALL_DIR}/cosign
-            
             # Add the bin directory to PATH
             export PATH=${INSTALL_DIR}:$PATH
-    
+
             # Check installation
             echo "Checking syft installation"
             syft version
             
-            echo "Checking cosign installation"
-            cosign version
-            
             echo "Generating SBOM"
             syft $IMAGE_DESTINATION -o spdx-json > sbom.spdx.json
-    
-            echo "Pushing SBOM to registry"
-            cosign login -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD $REGISTRY
+
+            echo "Pushing SBOM to Quay repository"
+            SBOM_FILE="sbom.spdx.json"
+            REPOSITORY="quay.io/rh-ee-akottuva/jenkins-sbom"
             
-            echo "Attesting SBOM"
-            cosign attest --predicate sbom.spdx.json --type spdx $IMAGE_DESTINATION
+            curl -u ${REGISTRY_USERNAME}:${REGISTRY_PASSWORD} -X PUT -H "Content-Type: application/vnd.quay.sbom.spdx+json" --data-binary @${SBOM_FILE}
+            
+            echo "SBOM pushed successfully"
         '''
     }
+}
+
 
 
         stage('Sign Artifacts') {
