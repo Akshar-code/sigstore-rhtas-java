@@ -133,9 +133,11 @@ stage('Generate and Push SBOM') {
         '''
     }
 }
-
-
-
+stage('RHDA'){
+    sh '''
+    rhdaAnalysis file: 'sbom.spdx.json', consentTelemetry: true
+    '''
+}
 
         stage('Sign Artifacts') {
             unstash 'binaries'
