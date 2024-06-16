@@ -120,7 +120,8 @@ stage('Generate and Push SBOM') {
             
             echo "Generating SBOM"
             syft $IMAGE_DESTINATION -o spdx-json > sbom.spdx.json
-
+            echo "Printing SBOM For testing"
+            cat sbom.spdx.json
             echo "Pushing SBOM to Quay repository"
             SBOM_FILE="sbom.spdx.json"
             REPOSITORY="quay.io/${REGISTRY_USERNAME}/test"
