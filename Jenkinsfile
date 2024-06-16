@@ -113,31 +113,26 @@ stage('Generate and Push SBOM') {
             
             # Add the bin directory to PATH
             export PATH=${INSTALL_DIR}:$PATH
-    
+
             # Check installation
             echo "Checking syft installation"
             syft version
             
             echo "Generating SBOM"
             syft $IMAGE_DESTINATION -o spdx-json > sbom.spdx.json
-            echo "Uploading SBOM to Quay repository"
-            
-            SBOM_FILE="sbom.spdx.json"
-            REPOSITORY="quay.io/rh-ee-akottuva/jenkins-sbom"
 
-            # Get an authorization token
-            TOKEN=$(curl -s -u rh-ee-akottuva+jenkins_sbom:rh-ee-akottuva+jenkins_sbom "https://quay.io/v2/auth?service=quay.io&scope=repository:rh-ee-akottuva+jenkins_sbom/jenkins-sbom:push,pull" | jq -r '.token')
+            echo "Pushing SBOM to Quay repository"
+            SBOM_FILE="sbom.spdx.json"
+            REPOSITORY="quay.io/${REGISTRY_USERNAME}/test"
+            UPLOAD_URL="${REPOSITORY}/manifests/latest"
             
-            # Start the blob upload
-            UPLOAD_URL=$(curl -s -X POST -H "Authorization: Bearer ${TOKEN}" "https://quay.io/v2/${REGISTRY_USERNAME}/jenkins-sbom/blobs/uploads/" | jq -r '.Location')
+            curl -u ${REGISTRY_USERNAME}:${REGISTRY_PASSWORD} -X PUT -H "Content-Type: application/vnd.quay.sbom.spdx+json" --data-binary @${SBOM_FILE} ${UPLOAD_URL}
             
-            # Upload the blob
-            curl -s -X PUT -H "Authorization: Bearer ${TOKEN}" --data-binary @${SBOM_FILE} "${UPLOAD_URL}&digest=$(sha256sum ${SBOM_FILE} | awk '{ print $1 }')"
-            
-            echo "SBOM uploaded successfully"
+            echo "SBOM pushed successfully"
         '''
     }
 }
+
 
 
 
