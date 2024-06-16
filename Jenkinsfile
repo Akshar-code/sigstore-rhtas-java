@@ -117,6 +117,7 @@ podTemplate([
                $COSIGN sign --identity-token=/var/run/sigstore/cosign/id-token $DIGEST_DESTINATION
 
                $COSIGN attest --identity-token=/var/run/sigstore/cosign/id-token --predicate=./target/classes/META-INF/maven/com.redhat/sigstore-rhtas-java/license.spdx.json -y --type=spdxjson $DIGEST_DESTINATION
+               $COSIGN verify  --certificate-identity=ci-builder@redhat.com  quay.io/vedadashan2/sigstore-rhtas-java:latest
             '''
             }
         }
