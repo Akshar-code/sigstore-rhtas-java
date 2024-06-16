@@ -98,7 +98,7 @@ podTemplate([
             '''
             }
         }
-        stage('Generate and Push SBOM') {
+    stage('Generate and Push SBOM') {
         sh '''
             #!/bin/bash
             echo "Installing syft and cosign"
@@ -128,9 +128,13 @@ podTemplate([
             syft $IMAGE_DESTINATION -o spdx-json > sbom.spdx.json
     
             echo "Pushing SBOM to registry"
-            cosign attach sbom --type spdx $IMAGE_DESTINATION 
+            cosign login -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD $REGISTRY
+            
+            echo "Attesting SBOM"
+            cosign attest --predicate sbom.spdx.json --type spdx $IMAGE_DESTINATION
         '''
     }
+
 
         stage('Sign Artifacts') {
             unstash 'binaries'
