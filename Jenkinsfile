@@ -62,9 +62,6 @@ podTemplate([
                 gzip -f -d cosign.gz
                 rm -f cosign.gz
                 chmod +x cosign
-                #!/bin/bash
-                echo "Installing syft"
-               curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
             '''
         }
 
@@ -102,17 +99,24 @@ podTemplate([
         }
         stage('Generate and Push SBOM') {
             sh '''
-               #!/bin/bash
-               echo "Installing syft"
-               curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
-
-               echo "Generating SBOM"
-               syft $IMAGE_DESTINATION -o spdx-json > sbom.spdx.json
-
-               echo "Pushing SBOM to registry"
-               cosign attach sbom --type spdx-json $IMAGE_DESTINATION sbom.spdx.json
+                #!/bin/bash
+                echo "Installing syft"
+                
+                # Create a directory for syft installation
+                mkdir -p ${WORKSPACE}/bin
+                curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b ${WORKSPACE}/bin
+                
+                # Add the bin directory to PATH
+                export PATH=${WORKSPACE}/bin:$PATH
+        
+                echo "Generating SBOM"
+                syft $IMAGE_DESTINATION -o spdx-json > sbom.spdx.json
+        
+                echo "Pushing SBOM to registry"
+                ${WORKSPACE}/bin/cosign attach sbom --type spdx-json $IMAGE_DESTINATION sbom.spdx.json
             '''
         }
+
 
         stage('Sign Artifacts') {
             unstash 'binaries'
