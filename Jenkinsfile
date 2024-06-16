@@ -158,16 +158,22 @@ stage('Generate and Push SBOM') {
             '''
             }
         }
-        stage('Retrieve SBOM from Quay') {
+stage('Retrieve SBOM from Quay') {
     withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: params.REGISTRY_CREDENTIALS, usernameVariable: 'REGISTRY_USERNAME', passwordVariable: 'REGISTRY_PASSWORD']]) {
         sh '''
             #!/bin/bash
             echo "Retrieving SBOM from Quay repository"
             
             REPOSITORY="quay.io/${REGISTRY_USERNAME}/jenkins-sbom"
+            ENCODED_REPOSITORY=$(echo "${REGISTRY_USERNAME}/jenkins-sbom" | jq -sRr @uri)
             
             # Get an authorization token
-            TOKEN=$(curl -s -u ${REGISTRY_USERNAME}:${REGISTRY_PASSWORD} "https://quay.io/v2/auth?service=quay.io&scope=repository:${REGISTRY_USERNAME}/jenkins-sbom:pull" | grep -o '"token":"[^"]*' | grep -o '[^"]*$')
+            TOKEN=$(curl -s -u ${REGISTRY_USERNAME}:${REGISTRY_PASSWORD} "https://quay.io/v2/auth?service=quay.io&scope=repository:${ENCODED_REPOSITORY}:pull" | grep -o '"token":"[^"]*' | grep -o '[^"]*$')
+            
+            if [ -z "$TOKEN" ]; then
+                echo "Failed to get an authentication token"
+                exit 1
+            fi
             
             # Specify the digest of the SBOM (you need to get this from the upload process or repository listing)
             DIGEST=$DIGEST_DESTINATION # Replace with the actual digest of the SBOM
@@ -180,6 +186,7 @@ stage('Generate and Push SBOM') {
         '''
     }
 }
+
 
 
     }
