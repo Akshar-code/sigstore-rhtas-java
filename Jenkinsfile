@@ -128,7 +128,7 @@ podTemplate([
             syft $IMAGE_DESTINATION -o spdx-json > sbom.spdx.json
     
             echo "Pushing SBOM to registry"
-            cosign attach sbom --type spdx-json $IMAGE_DESTINATION sbom.spdx.json
+            cosign attach --sbom --type spdx-json $IMAGE_DESTINATION 
         '''
     }
 
