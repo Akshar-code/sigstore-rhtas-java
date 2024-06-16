@@ -158,6 +158,29 @@ stage('Generate and Push SBOM') {
             '''
             }
         }
+        stage('Retrieve SBOM from Quay') {
+    withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: params.REGISTRY_CREDENTIALS, usernameVariable: 'REGISTRY_USERNAME', passwordVariable: 'REGISTRY_PASSWORD']]) {
+        sh '''
+            #!/bin/bash
+            echo "Retrieving SBOM from Quay repository"
+            
+            REPOSITORY="quay.io/${REGISTRY_USERNAME}/jenkins-sbom"
+            
+            # Get an authorization token
+            TOKEN=$(curl -s -u ${REGISTRY_USERNAME}:${REGISTRY_PASSWORD} "https://quay.io/v2/auth?service=quay.io&scope=repository:${REGISTRY_USERNAME}/jenkins-sbom:pull" | grep -o '"token":"[^"]*' | grep -o '[^"]*$')
+            
+            # Specify the digest of the SBOM (you need to get this from the upload process or repository listing)
+            DIGEST=$DIGEST_DESTINATION # Replace with the actual digest of the SBOM
+
+            # Download the SBOM
+            curl -s -H "Authorization: Bearer ${TOKEN}" "https://quay.io/v2/${REGISTRY_USERNAME}/jenkins-sbom/blobs/sha256:${DIGEST}" -o sbom.spdx.json
+
+            # Verify the SBOM file
+            cat sbom.spdx.json
+        '''
+    }
+}
+
 
     }
 }
