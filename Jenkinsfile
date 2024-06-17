@@ -130,12 +130,14 @@ stage('Generate and Push SBOM') {
             curl -u ${REGISTRY_USERNAME}:${REGISTRY_PASSWORD} -X PUT -H "Content-Type: application/vnd.quay.sbom.spdx+json" --data-binary @${SBOM_FILE} ${UPLOAD_URL}
             
             echo "SBOM pushed successfully"
+            echo "SBOM RHDA Analysis"
+            https rhda.rhcloud.com/api/v4/analysis Accept:application/json Content-Type:application/vnd.cyclonedx+json rhda-source:test @$SBOM_FILE
         '''
     }
 }
 stage('RHDA'){
     sh '''
-    rhdaAnalysis file: 'sbom.spdx.json', consentTelemetry: true
+    https rhda.rhcloud.com/api/v4/analysis Accept:application/json Content-Type:application/vnd.cyclonedx+json rhda-source:test @$SBOM_FILE
     '''
 }
 
