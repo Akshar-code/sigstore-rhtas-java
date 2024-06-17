@@ -131,7 +131,11 @@ stage('Generate and Push SBOM') {
             
             echo "SBOM pushed successfully"
             echo "SBOM RHDA Analysis"
-            curl -X POST https rhda.rhcloud.com/api/v4/analysis Accept:application/json Content-Type:application/vnd.cyclonedx+json rhda-source:test @$SBOM_FILE
+            curl -X POST https://rhda.rhcloud.com/api/v4/analysis \
+            -H "Accept: application/json" \
+            -H "Content-Type: application/vnd.cyclonedx+json" \
+            -H "rhda-source: test" \
+            --data @sbom.spdx.json
         '''
     }
 }
