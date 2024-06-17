@@ -135,7 +135,7 @@ stage('Generate and Push SBOM') {
             -H "Accept: application/json" \
             -H "Content-Type: application/vnd.spdx+json" \
             -H "rhda-source: test" \
-            --data @sbom.spdx.json
+            --data @$SBOM_FILE
         '''
     }
 }
