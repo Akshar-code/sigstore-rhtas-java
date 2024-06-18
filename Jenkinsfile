@@ -119,21 +119,21 @@ stage('Generate and Push SBOM') {
             syft version
             
             echo "Generating SBOM"
-            syft $IMAGE_DESTINATION -o spdx-json > sbom.spdx.json
+            syft $IMAGE_DESTINATION -o cyclone-json > sbom.cyclonedx.json
             echo "Printing SBOM For testing"
-            cat sbom.spdx.json
+            cat sbom.cyclonedx.json
             echo "Pushing SBOM to Quay repository"
-            SBOM_FILE="sbom.spdx.json"
+            SBOM_FILE="sbom.cyclonedx.json"
             REPOSITORY="quay.io/${REGISTRY_USERNAME}/test"
             UPLOAD_URL="${REPOSITORY}/manifests/latest"
             
-            curl -u ${REGISTRY_USERNAME}:${REGISTRY_PASSWORD} -X PUT -H "Content-Type: application/vnd.quay.sbom.spdx+json" --data-binary @${SBOM_FILE} ${UPLOAD_URL}
+            curl -u ${REGISTRY_USERNAME}:${REGISTRY_PASSWORD} -X PUT -H "Content-Type: application/vnd.quay.sbom.cyclonedx+json" --data-binary @${SBOM_FILE} ${UPLOAD_URL}
             
             echo "SBOM pushed successfully"
             echo "SBOM RHDA Analysis"
             curl -X POST https://rhda.rhcloud.com/api/v4/analysis \
             -H "Accept: application/json" \
-            -H "Content-Type: application/vnd.spdx+json" \
+            -H "Content-Type: application/vnd.cyclonedx+json" \
             -H "rhda-source: test" \
             --data @$SBOM_FILE
         '''
