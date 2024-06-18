@@ -98,7 +98,7 @@ podTemplate([
             '''
             }
         }
-stage('Generate and Push SBOM') {
+stage('Generate and Scan SBOM') {
     withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: params.REGISTRY_CREDENTIALS, usernameVariable: 'REGISTRY_USERNAME', passwordVariable: 'REGISTRY_PASSWORD']]) {
         sh '''
             #!/bin/bash
@@ -139,13 +139,8 @@ stage('Generate and Push SBOM') {
         '''
     }
 }
-stage('RHDA'){
-    sh '''
-    https rhda.rhcloud.com/api/v4/analysis Accept:application/json Content-Type:application/vnd.cyclonedx+json rhda-source:test @$SBOM_FILE
-    '''
-}
 
-        stage('Sign Artifacts') {
+stage('Sign Artifacts') {
             unstash 'binaries'
 
             // Sign Jar
@@ -167,34 +162,12 @@ stage('RHDA'){
             '''
             }
         }
-stage('Retrieve SBOM from Quay') {
-    withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: params.REGISTRY_CREDENTIALS, usernameVariable: 'REGISTRY_USERNAME', passwordVariable: 'REGISTRY_PASSWORD']]) {
-        sh '''
-            #!/bin/bash
-            echo "Retrieving SBOM from Quay repository"
-            
-            REPOSITORY="quay.io/${REGISTRY_USERNAME}/jenkins-sbom"
-            ENCODED_REPOSITORY=$(echo "${REGISTRY_USERNAME}/jenkins-sbom" | jq -sRr @uri)
-            
-            # Get an authorization token
-            TOKEN=$(curl -s -u ${REGISTRY_USERNAME}:${REGISTRY_PASSWORD} "https://quay.io/v2/auth?service=quay.io&scope=repository:${ENCODED_REPOSITORY}:pull" | grep -o '"token":"[^"]*' | grep -o '[^"]*$')
-            
-            if [ -z "$TOKEN" ]; then
-                echo "Failed to get an authentication token"
-                exit 1
-            fi
-            
-            # Specify the digest of the SBOM (you need to get this from the upload process or repository listing)
-            DIGEST=$DIGEST_DESTINATION # Replace with the actual digest of the SBOM
-
-            # Download the SBOM
-            curl -s -H "Authorization: Bearer ${TOKEN}" "https://quay.io/v2/${REGISTRY_USERNAME}/jenkins-sbom/blobs/sha256:${DIGEST}" -o sbom.spdx.json
-
-            # Verify the SBOM file
-            cat sbom.spdx.json
-        '''
-    }
-}
+// Step to verify Signature
+stage('Verify Signature') {
+            sh '''
+            $COSIGN verify  --certificate-identity=ci-builder@redhat.com  quay.io/rh-ee-akottuva/hangman:latest
+            '''
+        }
 
 
 
