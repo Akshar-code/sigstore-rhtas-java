@@ -165,7 +165,7 @@ stage('Sign Artifacts') {
 // Step to verify Signature
 stage('Verify Signature') {
             sh '''
-            $COSIGN verify  --certificate-identity=ci-builder@redhat.com  quay.io/rh-ee-akottuva/hangman:latest
+            $COSIGN verify  --certificate-identity=ci-builder@redhat.com  quay.io/rh-ee-akottuva/jenkins-sbom
             '''
         }
 
