@@ -98,7 +98,7 @@ podTemplate([
             '''
             }
         }
-stage('Generate and Scan SBOM') {
+stage('Generate and put SBOM in TPA') {
     withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: params.REGISTRY_CREDENTIALS, usernameVariable: 'REGISTRY_USERNAME', passwordVariable: 'REGISTRY_PASSWORD']]) {
         sh '''
             #!/bin/bash
@@ -136,6 +136,13 @@ stage('Generate and Scan SBOM') {
             -H "Content-Type: application/vnd.cyclonedx+json" \
             -H "rhda-source: test" \
             --data @$SBOM_FILE
+            echo "Pushing SBOM to TPA"
+            curl -X 'PUT' \
+            '${TPA_INSTANCE}/api/v1/sbom?id=${SBOM_ID}' \
+            -H 'accept: */*' \
+            -H 'Content-Type: application/json' \
+            -d '@$SBOM_FILE'
+            echo "SBOM Pushed succesfully to TPA"
         '''
     }
 }
