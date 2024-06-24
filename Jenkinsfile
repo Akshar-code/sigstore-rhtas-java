@@ -141,7 +141,7 @@ stage('Generate and put SBOM in TPA') {
             '${TPA_INSTANCE}/api/v1/sbom?id=${SBOM_ID}' \
             -H 'accept: */*' \
             -H 'Content-Type: application/json' \
-            -d '@$SBOM_FILE'
+            -d @$SBOM_FILE
             echo "SBOM Pushed succesfully to TPA"
         '''
     }
