@@ -119,7 +119,7 @@ stage('Generate and put SBOM in TPA') {
             syft version
             
             echo "Generating SBOM"
-            syft $IMAGE_DESTINATION -o cyclonedx-json > sbom.cyclonedx.json
+            syft $IMAGE_DESTINATION -o cyclonedx-json@1.4 > sbom.cyclonedx.json
             echo "Printing SBOM For testing"
             cat sbom.cyclonedx.json
             echo "Pushing SBOM to Quay repository"
