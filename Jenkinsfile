@@ -137,7 +137,6 @@ stage('Generate and put SBOM in TPA') {
             -H "rhda-source: test" \
             --data @$SBOM_FILE
             echo "Pushing SBOM to TPA"
-            cat ${TPA_INSTANCE}
             curl -X 'PUT' \
             '${TPA_INSTANCE}/api/v1/sbom?id=${SBOM_ID}' \
             -H 'accept: */*' \
