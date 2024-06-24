@@ -142,7 +142,7 @@ stage('Generate and put SBOM in TPA') {
             -H 'accept: */*' \
             -H 'Authorization: Bearer ${BEARER_TOKEN}\
             -H 'Content-Type: application/json' \
-            -d @${SBOM_FILE}
+            -d @$SBOM_FILE
             echo "SBOM Pushed succesfully to TPA"
         '''
     }
