@@ -138,10 +138,11 @@ stage('Generate and put SBOM in TPA') {
             --data @$SBOM_FILE
             echo "Pushing SBOM to TPA"
             curl -X 'PUT' \
-            '${TPA_INSTANCE}/api/v1/sbom?id=${SBOM_ID}' \
+            '${TPA_INSTANCE/api/v1/sbom?id=${SBOM_ID}' \
             -H 'accept: */*' \
+            -H 'Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJwRmVsV0JGWFE3blNkRmlHQndoalpuNWFxbWs0T08wZGx4QWtIUU5ZLVZJIn0.eyJleHAiOjE3MTkyNjc4MTEsImlhdCI6MTcxOTI2NzUxMSwiYXV0aF90aW1lIjoxNzE5MjU5MDYyLCJqdGkiOiIxZjgxMjI2OC0wNDVjLTQwMGEtYTkwMy1jZTQwNjFkM2JhYTkiLCJpc3MiOiJodHRwczovL3Nzby10cnVzdGVkLXByb2ZpbGUtYW5hbHl6ZXIuYXBwcy5jbHVzdGVyLXZ4Mjg0LnNhbmRib3g1NTcub3BlbnRsYy5jb20vcmVhbG1zL2NoaWNrZW4iLCJhdWQiOiJhY2NvdW50Iiwic3ViIjoiNjVlYmUwNDUtMjljMi00ODU3LWI3ODEtYjVmMzIwMjMzOGUxIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoiZnJvbnRlbmQiLCJzZXNzaW9uX3N0YXRlIjoiMzk5MzExN2MtZTMwZS00N2RlLTgwZjktNDJmMGQ1ZjljOGY1IiwiYWxsb3dlZC1vcmlnaW5zIjpbIioiXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbIm9mZmxpbmVfYWNjZXNzIiwiY2hpY2tlbi11c2VyIiwidW1hX2F1dGhvcml6YXRpb24iLCJjaGlja2VuLWFkbWluIiwiZGVmYXVsdC1yb2xlcy1jaGlja2VuIiwiY2hpY2tlbi1tYW5hZ2VyIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJvcGVuaWQgcmVhZDpkb2N1bWVudCBwcm9maWxlIGVtYWlsIGRlbGV0ZTpkb2N1bWVudCBjcmVhdGU6ZG9jdW1lbnQiLCJzaWQiOiIzOTkzMTE3Yy1lMzBlLTQ3ZGUtODBmOS00MmYwZDVmOWM4ZjUiLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsInByZWZlcnJlZF91c2VybmFtZSI6ImFkbWluIn0.QQELuKzFF7Zkoz6YrAVzhyruJ_WQqaFUXyHPBaEB5p-49eDOC3Kdxi6ynLW65dcLNdjTF5Fwxvohfmv42OE6v8f91i2dvNn509f-iIqRg8b7Rkre4VZ7WwvW0iSaVh0BFvUIEliA6pDx-OclbNAmkQRoZes5fan1V_YmwaWkg-N990bqGofxkb6B2_V8WzgYk4sQhwriRjpGKACCyePqLfEbsqD4b4QXMonAiUNWcurpXpreUu8fjkY_jYkWtsAv_9vKUuFBHqxHIKSLqiRB1P_IOxFBMEZwT9uNYUUfgxX7SyrFiCRVUyTnytqYhEX_tp9eU6xo6Twxyq8IKEwfKA' \
             -H 'Content-Type: application/json' \
-            -d @$SBOM_FILE
+            -d '@${SBOM_FILE}'
             echo "SBOM Pushed succesfully to TPA"
         '''
     }
