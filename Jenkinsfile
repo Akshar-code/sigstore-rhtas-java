@@ -1,3 +1,5 @@
+
+
 properties([
     parameters([
         string(defaultValue: 'quay.io/ablock/nonroot-jenkins-agent-maven:latest', description: 'Agent Image', name: 'AGENT_IMAGE'),
@@ -32,7 +34,6 @@ podTemplate([
 ]) {
     node('non-root-jenkins-agent-maven') {
 stage('Setup Environment') {
-    steps {
         script {
             env.COSIGN_FULCIO_URL="https://fulcio-server-trusted-artifact-signer.${params.APPS_DOMAIN}"
             env.COSIGN_REKOR_URL="https://rekor-server-trusted-artifact-signer.${params.APPS_DOMAIN}"
@@ -92,7 +93,6 @@ stage('Setup Environment') {
             stash name: 'binaries', includes: 'bin/*'
         }
     }
-}
 
         stage('Checkout') {
             checkout scm
@@ -202,3 +202,4 @@ stage('Setup Environment') {
         }
     }
 }
+
