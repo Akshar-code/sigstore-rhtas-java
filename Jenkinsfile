@@ -143,7 +143,7 @@ podTemplate([
                     --data @$SBOM_FILE
                     echo "Pushing SBOM to TPA"
                     curl -g -X 'PUT' \
-                    'https://sbom-trusted-profile-analyzer.apps.cluster-vx284.sandbox557.opentlc.com/api/v1/sbom?id=testing1234567' \
+                    'https://sbom-trusted-profile-analyzer.apps.cluster-bqcjr.sandbox1219.opentlc.com/api/v1/sbom?id=rhtas_testing' \
                     -H 'accept: */*' \
                     -H "Authorization: Bearer ${BOMBASTIC_TOKEN}" \
                     -H 'Content-Type: application/json' \
