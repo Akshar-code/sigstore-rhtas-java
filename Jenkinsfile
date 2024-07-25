@@ -31,7 +31,9 @@ podTemplate([
     )]
 ]) {
     node('non-root-jenkins-agent-maven') {
-        stage('Setup Environment') {
+stage('Setup Environment') {
+    steps {
+        script {
             env.COSIGN_FULCIO_URL="https://fulcio-server-trusted-artifact-signer.${params.APPS_DOMAIN}"
             env.COSIGN_REKOR_URL="https://rekor-server-trusted-artifact-signer.${params.APPS_DOMAIN}"
             env.COSIGN_MIRROR="https://tuf-trusted-artifact-signer.${params.APPS_DOMAIN}"
@@ -68,12 +70,29 @@ podTemplate([
                 deleteDir()
             }
 
+            // Fetch and verify Bombastic token
+            env.BOMBASTIC_TOKEN = getBombasticToken()
+            echo "Verifying Bombastic Token"
+            if (env.BOMBASTIC_TOKEN) {
+                echo "Bombastic Token (first 10 chars): ${env.BOMBASTIC_TOKEN.take(10)}..."
+                echo "Bombastic Token length: ${env.BOMBASTIC_TOKEN.length()}"
+                if (env.BOMBASTIC_TOKEN.startsWith("eyJ")) {
+                    echo "Bombastic Token appears to be in the correct format (starts with 'eyJ')"
+                } else {
+                    error "Bombastic Token does not start with the expected prefix"
+                }
+            } else {
+                error "Bombastic Token is null or empty"
+            }
+
             sh '''
               $COSIGN initialize
             '''
             
             stash name: 'binaries', includes: 'bin/*'
         }
+    }
+}
 
         stage('Checkout') {
             checkout scm
