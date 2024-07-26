@@ -48,19 +48,25 @@ podTemplate([
         }
         dir("bin") {
             sh '''
-                #!/bin/bash
-                echo "Downloading cosign"
-                curl -Lks -o cosign.gz https://cli-server-trusted-artifact-signer.$APPS_DOMAIN/clients/linux/cosign-amd64.gz
-                gzip -f -d cosign.gz
-                rm -f cosign.gz
-                chmod +x cosign
+            #!/bin/bash
+            echo "Downloading cosign"
+            curl -v -Lks -o cosign.gz https://cli-server-trusted-artifact-signer.$APPS_DOMAIN/clients/linux/cosign-amd64.gz
+            gzip -f -d cosign.gz
+            rm -f cosign.gz
+            chmod +x cosign
+            echo "Cosign binary contents:"
+            hexdump -C cosign | head
             '''
         }
         dir("tuf") {
             deleteDir()
         }
         sh '''
-          $COSIGN initialize
+        echo "Cosign version:"
+        bin/cosign version
+        echo "TUF root URL: $COSIGN_ROOT"
+        echo "Initializing Cosign:"
+        bin/cosign initialize --debug
         '''
         stash name: 'binaries', includes: 'bin/*'
        }
