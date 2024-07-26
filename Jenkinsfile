@@ -114,11 +114,6 @@ stage('Setup Environment') {
             }
         }
 
-        stage('Fetch Bombastic Token') {
-                script {
-                    env.BOMBASTIC_TOKEN = getBombasticToken()
-                }
-            }
 
         stage('Generate and put SBOM in TPA') {
             withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: params.REGISTRY_CREDENTIALS, usernameVariable: 'REGISTRY_USERNAME', passwordVariable: 'REGISTRY_PASSWORD']]) {
@@ -159,6 +154,7 @@ stage('Setup Environment') {
                     -H "rhda-source: test" \
                     --data @$SBOM_FILE
                     echo "Pushing SBOM to TPA"
+	        env.BOMBASTIC_TOKEN = getBombasticToken()
                     curl -g -X 'PUT' \
                     'https://sbom-trusted-profile-analyzer.apps.cluster-bqcjr.sandbox1219.opentlc.com/api/v1/sbom?id=rhtas_testing' \
                     -H 'accept: */*' \
