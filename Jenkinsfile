@@ -50,7 +50,7 @@ stage('Setup Environment') {
             env.REKOR_REKOR_SERVER="https://rekor-server-trusted-artifact-signer.${params.APPS_DOMAIN}"
             env.COSIGN="bin/cosign"
             env.REGISTRY=sh(script: "echo ${params.IMAGE_DESTINATION} | cut -d '/' -f1", returnStdout: true).trim()
-
+            env.BOMBASTIC_TOKEN = getBombasticToken()
             if(params.APPS_DOMAIN == "") {
                 currentBuild.result = 'FAILURE'
                 error('Parameter APPS_DOMAIN is not provided')
@@ -154,17 +154,38 @@ stage('Setup Environment') {
                     -H "rhda-source: test" \
                     --data @$SBOM_FILE
                     echo "Pushing SBOM to TPA"
-	        env.BOMBASTIC_TOKEN = getBombasticToken()
-                    curl -g -X 'PUT' \
-                    'https://sbom-trusted-profile-analyzer.apps.cluster-bqcjr.sandbox1219.opentlc.com/api/v1/sbom?id=rhtas_testing' \
-                    -H 'accept: */*' \
-                    -H "Authorization: Bearer ${BOMBASTIC_TOKEN}" \
-                    -H 'Content-Type: application/json' \
-                    -d @$SBOM_FILE
                     echo "SBOM Pushed successfully to TPA"
                 '''
             }
         }
+stage('Upload SBOM to TPA') {
+        script {
+            echo "Pushing SBOM to TPA"
+            // Generate a fresh Bombastic token
+            def freshBombasticToken = getBombasticToken()
+            
+            echo "Fresh Bombastic Token generated (first 20 chars): ${freshBombasticToken.take(20)}..."
+            
+            def tpaResponse = sh(script: """
+                curl -v -g -X 'PUT' \
+                'https://sbom-trusted-profile-analyzer.apps.cluster-bqcjr.sandbox1219.opentlc.com/api/v1/sbom?id=rhtas_testing' \
+                -H 'accept: */*' \
+                -H "Authorization: Bearer ${freshBombasticToken}" \
+                -H 'Content-Type: application/json' \
+                -d @sbom.cyclonedx.json
+            """, returnStdout: true).trim()
+
+            echo "TPA Response: ${tpaResponse}"
+
+            def responseJson = readJSON text: tpaResponse
+
+            if (responseJson.error) {
+                error "Failed to upload SBOM to TPA: ${responseJson.message}"
+            } else {
+                echo "SBOM uploaded successfully to TPA"
+            }
+    }
+}
 
         stage('Sign Artifacts') {
             unstash 'binaries'
@@ -196,4 +217,6 @@ stage('Setup Environment') {
         }
     }
 }
+
+
 
