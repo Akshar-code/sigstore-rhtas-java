@@ -66,7 +66,14 @@ podTemplate([
         bin/cosign version
         echo "TUF root URL: $COSIGN_ROOT"
         echo "Initializing Cosign:"
-        bin/cosign initialize --debug
+        bin/cosign initialize
+        echo "Cosign initialization complete"
+        
+        echo "Checking TUF root:"
+        curl -v $COSIGN_ROOT
+        
+        echo "Listing TUF directory:"
+        ls -la ~/.sigstore/root
         '''
         stash name: 'binaries', includes: 'bin/*'
        }
