@@ -115,12 +115,10 @@ stage('Setup Environment') {
         }
 
         stage('Fetch Bombastic Token') {
-            steps {
                 script {
                     env.BOMBASTIC_TOKEN = getBombasticToken()
                 }
             }
-        }
 
         stage('Generate and put SBOM in TPA') {
             withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: params.REGISTRY_CREDENTIALS, usernameVariable: 'REGISTRY_USERNAME', passwordVariable: 'REGISTRY_PASSWORD']]) {
