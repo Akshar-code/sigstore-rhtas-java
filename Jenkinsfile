@@ -66,21 +66,6 @@ stage('Setup Environment') {
                 deleteDir()
             }
 
-            // Fetch and verify Bombastic token
-            env.BOMBASTIC_TOKEN = getBombasticToken()
-            echo "Verifying Bombastic Token"
-            if (env.BOMBASTIC_TOKEN) {
-                echo "Bombastic Token (first 10 chars): ${env.BOMBASTIC_TOKEN.take(10)}..."
-                echo "Bombastic Token length: ${env.BOMBASTIC_TOKEN.length()}"
-                if (env.BOMBASTIC_TOKEN.startsWith("eyJ")) {
-                    echo "Bombastic Token appears to be in the correct format (starts with 'eyJ')"
-                } else {
-                    error "Bombastic Token does not start with the expected prefix"
-                }
-            } else {
-                error "Bombastic Token is null or empty"
-            }
-
             sh '''
               $COSIGN initialize
             '''
