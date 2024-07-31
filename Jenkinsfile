@@ -12,10 +12,6 @@ properties([
     ])
 ])
 
-def getBombasticToken() {
-    return sh(script: "kubectl get secret oidc-token -n jenkins -o jsonpath='{.data.id-token}' | base64 --decode", returnStdout: true).trim()
-}
-
 podTemplate([
     label: 'non-root-jenkins-agent-maven',
     cloud: 'openshift',
@@ -50,7 +46,6 @@ stage('Setup Environment') {
             env.REKOR_REKOR_SERVER="https://rekor-server-trusted-artifact-signer.${params.APPS_DOMAIN}"
             env.COSIGN="bin/cosign"
             env.REGISTRY=sh(script: "echo ${params.IMAGE_DESTINATION} | cut -d '/' -f1", returnStdout: true).trim()
-            env.BOMBASTIC_TOKEN = getBombasticToken()
             if(params.APPS_DOMAIN == "") {
                 currentBuild.result = 'FAILURE'
                 error('Parameter APPS_DOMAIN is not provided')
@@ -115,75 +110,55 @@ stage('Setup Environment') {
         }
 
 
-        stage('Generate and put SBOM in TPA') {
-            withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: params.REGISTRY_CREDENTIALS, usernameVariable: 'REGISTRY_USERNAME', passwordVariable: 'REGISTRY_PASSWORD']]) {
-                sh '''
-                    #!/bin/bash
-                    echo "Installing syft"
-                    
-                    # Create a directory for syft installation
-                    INSTALL_DIR="${WORKSPACE}/bin"
-                    mkdir -p ${INSTALL_DIR}
-                    
-                    # Install syft
-                    curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b ${INSTALL_DIR}
-                    
-                    # Add the bin directory to PATH
-                    export PATH=${INSTALL_DIR}:$PATH
-
-                    # Check installation
-                    echo "Checking syft installation"
-                    syft version
-                    
-                    echo "Generating SBOM"
-                    syft $IMAGE_DESTINATION -o cyclonedx-json@1.4 > sbom.cyclonedx.json
-                    echo "Printing SBOM For testing"
-                    cat sbom.cyclonedx.json
-                    echo "Pushing SBOM to Quay repository"
-                    SBOM_FILE="sbom.cyclonedx.json"
-                    REPOSITORY="quay.io/${REGISTRY_USERNAME}/test"
-                    UPLOAD_URL="${REPOSITORY}/manifests/latest"
-                    
-                    curl -u ${REGISTRY_USERNAME}:${REGISTRY_PASSWORD} -X PUT -H "Content-Type: application/vnd.quay.sbom.cyclonedx+json" --data-binary @${SBOM_FILE} ${UPLOAD_URL}
-                    
-                    echo "SBOM pushed successfully"
-                    echo "SBOM RHDA Analysis"
-                    curl -X POST https://rhda.rhcloud.com/api/v4/analysis \
-                    -H "Accept: application/json" \
-                    -H "Content-Type: application/vnd.cyclonedx+json" \
-                    -H "rhda-source: test" \
-                    --data @$SBOM_FILE
-                    echo "Pushing SBOM to TPA"
-                    echo "SBOM Pushed successfully to TPA"
-                '''
-            }
-        }
-stage('Upload SBOM to TPA') {
+stage('Generate and put SBOM in TPA') {
+    withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: params.REGISTRY_CREDENTIALS, usernameVariable: 'REGISTRY_USERNAME', passwordVariable: 'REGISTRY_PASSWORD']]) {
+        sh '''
+            #!/bin/bash
+            echo "Installing syft"
+            
+            # Create a directory for syft installation
+            INSTALL_DIR="${WORKSPACE}/bin"
+            mkdir -p ${INSTALL_DIR}
+            
+            # Install syft
+            curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b ${INSTALL_DIR}
+            
+            # Add the bin directory to PATH
+            export PATH=${INSTALL_DIR}:$PATH
+            # Check installation
+            echo "Checking syft installation"
+            syft version
+            
+            echo "Generating SBOM"
+            syft $IMAGE_DESTINATION -o cyclonedx-json@1.4 > sbom.cyclonedx.json
+            echo "Printing SBOM For testing"
+            cat sbom.cyclonedx.json
+            echo "Pushing SBOM to Quay repository"
+            SBOM_FILE="sbom.cyclonedx.json"
+            REPOSITORY="quay.io/${REGISTRY_USERNAME}/test"
+            UPLOAD_URL="${REPOSITORY}/manifests/latest"
+            
+            curl -u ${REGISTRY_USERNAME}:${REGISTRY_PASSWORD} -X PUT -H "Content-Type: application/vnd.quay.sbom.cyclonedx+json" --data-binary @${SBOM_FILE} ${UPLOAD_URL}
+            
+            echo "SBOM pushed successfully"
+            echo "SBOM RHDA Analysis"
+            curl -X POST https://rhda.rhcloud.com/api/v4/analysis \
+            -H "Accept: application/json" \
+            -H "Content-Type: application/vnd.cyclonedx+json" \
+            -H "rhda-source: test" \
+            --data @$SBOM_FILE
+        '''
         script {
-            echo "Pushing SBOM to TPA"
-            // Generate a fresh Bombastic token
-            def freshBombasticToken = getBombasticToken()
-            
-            echo "Fresh Bombastic Token generated (first 20 chars): ${freshBombasticToken.take(20)}..."
-            
-            def tpaResponse = sh(script: """
-                curl -v -g -X 'PUT' \
-                'https://sbom-trusted-profile-analyzer.apps.cluster-bqcjr.sandbox1219.opentlc.com/api/v1/sbom?id=rhtas_testing' \
-                -H 'accept: */*' \
-                -H "Authorization: Bearer ${freshBombasticToken}" \
-                -H 'Content-Type: application/json' \
+            def bombasticToken = sh(script: "kubectl get secret bombastic-token -o jsonpath='{.data.token}' | base64 --decode", returnStdout: true).trim()
+            sh """
+                curl -v -g -X 'PUT' \\
+                '${params.TPA_INSTANCE}/api/v1/sbom?id=rhtas_testing' \\
+                -H 'accept: */*' \\
+                -H 'Authorization: Bearer ${bombasticToken}' \\
+                -H 'Content-Type: application/json' \\
                 -d @sbom.cyclonedx.json
-            """, returnStdout: true).trim()
-
-            echo "TPA Response: ${tpaResponse}"
-
-            def responseJson = readJSON text: tpaResponse
-
-            if (responseJson.error) {
-                error "Failed to upload SBOM to TPA: ${responseJson.message}"
-            } else {
-                echo "SBOM uploaded successfully to TPA"
-            }
+            """
+        }
     }
 }
 
