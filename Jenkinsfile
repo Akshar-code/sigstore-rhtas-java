@@ -172,7 +172,7 @@ stage('Generate and put SBOM in TPA') {
 
         stage('Verify Signature') {
             sh '''
-            $COSIGN verify  --certificate-identity=ci-builder@redhat.com  quay.io/rh-ee-akottuva/jenkins-sbom
+            $COSIGN verify  --certificate-identity=ci-builder@redhat.com  quay.io/rh-ee-akottuva/jenkins-testing-9-23
             '''
         }
     }
