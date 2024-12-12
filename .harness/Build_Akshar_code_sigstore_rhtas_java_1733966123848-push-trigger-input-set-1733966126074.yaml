@@ -1,0 +1,14 @@
+inputSet:
+  name: Build_Akshar_code_sigstore_rhtas_java_1733966123848-push-trigger-input-set
+  identifier: Build_Akshar_code_sigstore_rhtas_java_1733966123848pushtriggerinputset
+  orgIdentifier: default
+  projectIdentifier: Harness_X_RHTAS
+  pipeline:
+    identifier: Build_Akshar_code_sigstore_rhtas_java_1733966123848
+    properties:
+      ci:
+        codebase:
+          build:
+            type: branch
+            spec:
+              branch: <+trigger.branch>
