@@ -1,0 +1,33 @@
+pipeline:
+  name: Build sigstore-rhtas-java
+  identifier: Build_Akshar_code_sigstore_rhtas_java_1733966123848
+  projectIdentifier: Harness_X_RHTAS
+  orgIdentifier: default
+  stages:
+    - stage:
+        name: Build
+        identifier: Build
+        type: CI
+        spec:
+          cloneCodebase: true
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Echo Welcome Message
+                  identifier: Echo_Welcome_Message
+                  spec:
+                    shell: Sh
+                    command: echo "Welcome to Harness CI"
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+  properties:
+    ci:
+      codebase:
+        connectorRef: account.Github_OAuth_1733966088578
+        repoName: Akshar-code/sigstore-rhtas-java
+        build: <+input>
