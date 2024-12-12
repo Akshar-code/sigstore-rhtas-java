@@ -1,3 +1,11 @@
+# Use a lightweight and public base image
+FROM alpine:3.18
 
-FROM registry.access.redhat.com/ubi9/ubi-minimal:9.2 
+# Set up a basic working directory
+WORKDIR /app
 
+# Copy application files if needed (example placeholder)
+# COPY . .
+
+# Basic command (example placeholder)
+CMD ["echo", "Hello from Alpine!"]
