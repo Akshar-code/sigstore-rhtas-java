@@ -1,0 +1,14 @@
+inputSet:
+  name: Build_Akshar_code_sigstore_rhtas_java_1736405994412-pr-trigger-input-set
+  identifier: Build_Akshar_code_sigstore_rhtas_java_1736405994412prtriggerinputset
+  orgIdentifier: default
+  projectIdentifier: rhtas_demo
+  pipeline:
+    identifier: Build_Akshar_code_sigstore_rhtas_java_1736405994412
+    properties:
+      ci:
+        codebase:
+          build:
+            type: PR
+            spec:
+              number: <+trigger.prNumber>
