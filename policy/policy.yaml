@@ -1,0 +1,11 @@
+apiVersion: policy.ec.redhat.com/v1alpha1
+kind: PolicyConfiguration
+metadata:
+  name: custom-policy
+
+sources:
+  - policy: "."
+
+configuration:
+  include:
+    - '@all'    
