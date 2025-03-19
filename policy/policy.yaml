@@ -4,8 +4,9 @@ metadata:
   name: custom-policy
 
 sources:
-  - policy: "."
+  - policy:
+      - "."
 
 configuration:
   include:
-    - '@all'    
+    - '@all'
